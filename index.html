@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ledger — Shared Budget</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#20241f;
+    --parchment:#efe9da;
+    --parchment-2:#e4ddc9;
+    --line:#c9c0a6;
+    --gold:#96751c;
+    --sage:#4b6a52;
+    --rust:#9a4a3a;
+    --white:#faf8f2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Inter',sans-serif;
+    background:var(--parchment);
+    color:var(--ink);
+    min-height:100vh;
+  }
+  h1,h2,.num{font-family:'Source Serif 4',serif;}
+
+  /* ---------- Login ---------- */
+  #login-screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .login-card{
+    width:100%;
+    max-width:360px;
+    background:var(--white);
+    border:1px solid var(--line);
+    padding:40px 32px;
+  }
+  .login-card h1{
+    font-size:28px;
+    margin:0 0 4px;
+    font-weight:600;
+  }
+  .login-card p.tag{
+    margin:0 0 28px;
+    color:#6b6656;
+    font-size:14px;
+  }
+  label{
+    display:block;
+    font-size:13px;
+    margin-bottom:6px;
+    color:#585340;
+  }
+  input{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    background:var(--parchment);
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    color:var(--ink);
+  }
+  input:focus{
+    outline:2px solid var(--sage);
+    outline-offset:1px;
+  }
+  .field{margin-bottom:16px;}
+  button{
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+    border:none;
+  }
+  .btn-primary{
+    width:100%;
+    padding:12px;
+    background:var(--ink);
+    color:var(--white);
+    font-size:15px;
+    font-weight:500;
+    margin-top:8px;
+  }
+  .btn-primary:hover{background:#33382f;}
+  .btn-primary:disabled{opacity:0.5;cursor:default;}
+  #login-error{
+    color:var(--rust);
+    font-size:13px;
+    margin-top:14px;
+    min-height:16px;
+  }
+
+  /* ---------- App ---------- */
+  #app-screen{display:none;}
+  header.top{
+    border-bottom:1px solid var(--line);
+    padding:20px 28px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  header.top h1{font-size:22px;margin:0;font-weight:600;}
+  #signout{
+    background:transparent;
+    color:#585340;
+    font-size:13px;
+    text-decoration:underline;
+    padding:4px;
+  }
+  main{
+    max-width:900px;
+    margin:0 auto;
+    padding:28px;
+  }
+  .summary{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    margin-bottom:32px;
+  }
+  .summary .cell{
+    background:var(--white);
+    padding:20px;
+  }
+  .summary .cell .label{
+    font-size:12px;
+    color:#6b6656;
+    margin-bottom:6px;
+  }
+  .summary .cell .num{
+    font-size:26px;
+    font-weight:600;
+  }
+  .income .num{color:var(--sage);}
+  .expense .num{color:var(--rust);}
+
+  form#entry-form{
+    background:var(--white);
+    border:1px solid var(--line);
+    padding:20px;
+    margin-bottom:32px;
+    display:grid;
+    grid-template-columns:2fr 1fr 1fr;
+    gap:14px;
+  }
+  form#entry-form .full{grid-column:1/-1;}
+  .type-toggle{
+    display:flex;
+    border:1px solid var(--line);
+  }
+  .type-toggle button{
+    flex:1;
+    padding:10px;
+    background:var(--parchment);
+    font-size:14px;
+    color:#585340;
+  }
+  .type-toggle button.active[data-type="income"]{background:var(--sage);color:white;}
+  .type-toggle button.active[data-type="expense"]{background:var(--rust);color:white;}
+  form#entry-form .add-btn{
+    grid-column:1/-1;
+    padding:12px;
+    background:var(--ink);
+    color:var(--white);
+    font-weight:500;
+  }
+  form#entry-form .add-btn:hover{background:#33382f;}
+
+  .ledger{border-top:1px solid var(--line);}
+  .entry{
+    display:grid;
+    grid-template-columns:90px 1fr 120px 90px 32px;
+    align-items:center;
+    gap:12px;
+    padding:14px 4px;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+  }
+  .entry .date{color:#6b6656;font-size:12px;}
+  .entry .desc{font-weight:500;}
+  .entry .cat{
+    color:#6b6656;
+    font-size:12px;
+  }
+  .entry .amt{
+    text-align:right;
+    font-family:'Source Serif 4',serif;
+    font-size:16px;
+  }
+  .entry .amt.income{color:var(--sage);}
+  .entry .amt.expense{color:var(--rust);}
+  .entry .del{
+    background:transparent;
+    color:#a39c86;
+    font-size:18px;
+    line-height:1;
+    text-align:center;
+  }
+  .entry .del:hover{color:var(--rust);}
+  .empty-state{
+    padding:48px 20px;
+    text-align:center;
+    color:#6b6656;
+    font-size:14px;
+  }
+
+  @media(max-width:640px){
+    .summary{grid-template-columns:1fr;}
+    form#entry-form{grid-template-columns:1fr;}
+    .entry{grid-template-columns:1fr auto;grid-template-areas:"desc amt" "meta del";}
+    .entry .date,.entry .cat{grid-area:meta;}
+    .entry .desc{grid-area:desc;}
+    .entry .amt{grid-area:amt;}
+    .entry .del{grid-area:del;}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>Ledger</h1>
+    <p class="tag">Sign in with the shared account to view the group budget.</p>
+    <form id="login-form">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" required autocomplete="username" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" required autocomplete="current-password" />
+      </div>
+      <button type="submit" class="btn-primary" id="login-btn">Sign in</button>
+      <div id="login-error"></div>
+    </form>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="app-screen">
+  <header class="top">
+    <h1>Ledger</h1>
+    <button id="signout">Sign out</button>
+  </header>
+
+  <main>
+    <div class="summary">
+      <div class="cell income">
+        <div class="label">Income</div>
+        <div class="num" id="total-income">$0.00</div>
+      </div>
+      <div class="cell expense">
+        <div class="label">Expenses</div>
+        <div class="num" id="total-expense">$0.00</div>
+      </div>
+      <div class="cell">
+        <div class="label">Balance</div>
+        <div class="num" id="total-balance">$0.00</div>
+      </div>
+    </div>
+
+    <form id="entry-form">
+      <div class="type-toggle full">
+        <button type="button" data-type="expense" class="active">Expense</button>
+        <button type="button" data-type="income">Income</button>
+      </div>
+      <input type="text" id="entry-desc" placeholder="Description" class="full" required />
+      <input type="number" id="entry-amount" placeholder="Amount" step="0.01" min="0" required />
+      <input type="text" id="entry-category" placeholder="Category (optional)" />
+      <input type="date" id="entry-date" required />
+      <button type="submit" class="add-btn">Add entry</button>
+    </form>
+
+    <div class="ledger" id="ledger"></div>
+    <div class="empty-state" id="empty-state" style="display:none;">No entries yet — add the first one above.</div>
+  </main>
+</div>
+
+<!-- Firebase SDKs (compat, no build step needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<script>
+/* ====================================================================
+   1. FIREBASE INIT — firebaseConfig comes from firebase-config.js
+   ==================================================================== */
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+/* ====================================================================
+   2. LOGIN
+   ==================================================================== */
+const loginScreen = document.getElementById('login-screen');
+const appScreen = document.getElementById('app-screen');
+const loginForm = document.getElementById('login-form');
+const loginError = document.getElementById('login-error');
+const loginBtn = document.getElementById('login-btn');
+
+loginForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  loginError.textContent = '';
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Signing in…';
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  auth.signInWithEmailAndPassword(email, password)
+    .catch((err) => {
+      loginError.textContent = 'Could not sign in. Check the email and password.';
+      console.error(err);
+    })
+    .finally(() => {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign in';
+    });
+});
+
+document.getElementById('signout').addEventListener('click', () => auth.signOut());
+
+let unsubscribeEntries = null;
+
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    loginScreen.style.display = 'none';
+    appScreen.style.display = 'block';
+    startListening();
+  } else {
+    loginScreen.style.display = 'flex';
+    appScreen.style.display = 'none';
+    if (unsubscribeEntries) unsubscribeEntries();
+  }
+});
+
+/* ====================================================================
+   3. ENTRY FORM
+   ==================================================================== */
+let currentType = 'expense';
+document.querySelectorAll('.type-toggle button').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.type-toggle button').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentType = btn.dataset.type;
+  });
+});
+
+document.getElementById('entry-date').valueAsDate = new Date();
+
+const entryForm = document.getElementById('entry-form');
+entryForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const desc = document.getElementById('entry-desc').value.trim();
+  const amount = parseFloat(document.getElementById('entry-amount').value);
+  const category = document.getElementById('entry-category').value.trim() || 'General';
+  const date = document.getElementById('entry-date').value;
+
+  if (!desc || isNaN(amount) || amount <= 0) return;
+
+  db.collection('transactions').add({
+    description: desc,
+    amount: amount,
+    type: currentType,
+    category: category,
+    date: date,
+    createdBy: auth.currentUser.email,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    entryForm.reset();
+    document.getElementById('entry-date').valueAsDate = new Date();
+  }).catch((err) => {
+    alert('Could not save entry: ' + err.message);
+  });
+});
+
+/* ====================================================================
+   4. LIVE LEDGER — shared across everyone signed in
+   ==================================================================== */
+const ledgerEl = document.getElementById('ledger');
+const emptyState = document.getElementById('empty-state');
+const fmt = (n) => '$' + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function startListening() {
+  unsubscribeEntries = db.collection('transactions')
+    .orderBy('date', 'desc')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot((snapshot) => {
+      const entries = [];
+      snapshot.forEach((doc) => entries.push({ id: doc.id, ...doc.data() }));
+      renderLedger(entries);
+    }, (err) => {
+      console.error(err);
+      ledgerEl.innerHTML = '<div class="empty-state">Could not load entries. Check your Firestore setup.</div>';
+    });
+}
+
+function renderLedger(entries) {
+  let totalIncome = 0, totalExpense = 0;
+  ledgerEl.innerHTML = '';
+
+  if (entries.length === 0) {
+    emptyState.style.display = 'block';
+  } else {
+    emptyState.style.display = 'none';
+  }
+
+  entries.forEach((entry) => {
+    if (entry.type === 'income') totalIncome += entry.amount;
+    else totalExpense += entry.amount;
+
+    const row = document.createElement('div');
+    row.className = 'entry';
+    row.innerHTML = `
+      <div class="date">${formatDate(entry.date)}</div>
+      <div class="desc">${escapeHtml(entry.description)}</div>
+      <div class="cat">${escapeHtml(entry.category)}</div>
+      <div class="amt ${entry.type}">${entry.type === 'expense' ? '−' : '+'}${fmt(entry.amount)}</div>
+      <button class="del" title="Delete" data-id="${entry.id}">×</button>
+    `;
+    ledgerEl.appendChild(row);
+  });
+
+  document.querySelectorAll('.del').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (confirm('Delete this entry?')) {
+        db.collection('transactions').doc(btn.dataset.id).delete();
+      }
+    });
+  });
+
+  document.getElementById('total-income').textContent = fmt(totalIncome);
+  document.getElementById('total-expense').textContent = fmt(totalExpense);
+  document.getElementById('total-balance').textContent = fmt(totalIncome - totalExpense);
+}
+
+function formatDate(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>
