@@ -10,10 +10,10 @@
    Firestore security rules (see README.md), not from hiding this.
    ============================================================ */
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyA7S5NjOX3Dych-Tp2eKhPGPHW7dmS6n5k",
+  authDomain: "budget-tracker-a7359.firebaseapp.com",
+  projectId: "budget-tracker-a7359",
+  storageBucket: "budget-tracker-a7359.firebasestorage.app",
+  messagingSenderId: "665412086367",
+  appId: "1:665412086367:web:e30921c7bb68d49bff49ea"
 };
